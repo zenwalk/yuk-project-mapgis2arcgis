@@ -5,8 +5,11 @@ using System.Text;
 using System.IO;
 namespace MapArcGIS
 {
-    public class WorkSpaceWT
+    public class WorkSpaceWT: WorkSpace
     {
+        /// <summary>
+        /// 文件长度是经过压缩的，是实际长度的二分之一
+        /// </summary>
         internal class PointData
         {
             public int ID;
@@ -91,7 +94,6 @@ namespace MapArcGIS
         
         public override void LoadData(WorkSpaceInfo wsi)
         {
-            
             base.LoadData(wsi);
             loadData();
         }
@@ -323,6 +325,9 @@ namespace MapArcGIS
         {
             FileStream shapeFile = new FileStream(fileName+".shp",FileMode.OpenOrCreate);
             BinaryWriter shpWR = new BinaryWriter(shapeFile);
+            FileStream idxFile = new FileStream(fileName+".shx",FileMode.OpenOrCreate);
+            BinaryWriter idxWR = new BinaryWriter(idxFile);
+            ////////////////////////////shp文件的头文件信息////////////////////////////////
             shpWR.Write(170328064);
             for (int i = 0; i < 6; i++)
             {
@@ -338,33 +343,58 @@ namespace MapArcGIS
             {
                 shpWR.Write(0);
             }
+            ///////////////////////////shx文件的头文件信息/////////////////////////////////
+            idxWR.Write(170328064);
+            for (int i = 0; i < 6; i++)
+            {
+                idxWR.Write(0);
+            }
+            idxWR.Write(1000);
+            idxWR.Write(1);
+            for (int i = 0; i < 4; i++)
+            {
+                idxWR.Write(this.aeraBound[i]);
+            }
+            for (int i = 0; i < 8; i++)
+            {
+                idxWR.Write(0);
+            }
+            ////////////////////////////shp文件的图形信息/////////////////////////////////
             for (int i = 1; i < this.pointsNumber; i++)
             {
-                shpWR.Write(i);
-                shpWR.Write(10);
+                idxWR.Write(ReverseArray(BitConverter.GetBytes((int)shapeFile.Position / 2)));
+                idxWR.Write(ReverseArray(BitConverter.GetBytes(10)));
+                shpWR.Write(ReverseArray(BitConverter.GetBytes(i)));
+                shpWR.Write(ReverseArray(BitConverter.GetBytes(10)));
                 shpWR.Write(1);
                 shpWR.Write(this.pointDatas[i - 1].positionX);
                 shpWR.Write(this.pointDatas[i - 1].positionY);
             }
             shapeFile.Seek(24, SeekOrigin.Begin);
-            shpWR.Write(ReverseArray((int)shapeFile.Length));
+            shpWR.Write(ReverseArray(BitConverter.GetBytes((int)shapeFile.Length/2)));
+            idxFile.Seek(24, SeekOrigin.Begin);
+            idxWR.Write(ReverseArray(BitConverter.GetBytes((int)idxFile.Length/2)));
             shpWR.Close();
             shpWR.Dispose();
             shapeFile.Close();
             shapeFile.Dispose();
+            idxWR.Close();
+            idxWR.Dispose();
+            idxFile.Close();
+            idxFile.Dispose();
         }
-        public void ConverToIndexFIle()
+        public void ConverToDataFIle()
         {
 
         }
-        public byte[] ReverseArray(int value)
+        public byte[] ReverseArray(byte[] value)
         {
-            byte[] temp, result;
-            temp = BitConverter.GetBytes(Convert.ToDouble(value));
-            result = new byte[temp.Length];
-            for (int i = 0; i < temp.Length; i++)
+            byte[] result;
+            //temp = BitConverter.GetBytes(Convert.ToDouble(value));
+            result = new byte[value.Length];
+            for (int i = 0; i < value.Length; i++)
             {
-                result[i] = temp[temp.Length - i];
+                result[i] = value[value.Length - i-1];
             }
             return result;
         }

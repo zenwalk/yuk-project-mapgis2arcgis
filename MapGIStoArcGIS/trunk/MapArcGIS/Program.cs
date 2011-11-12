@@ -13,6 +13,7 @@ namespace MapArcGIS
             WorkSpaceWT test = new WorkSpaceWT();
             test.LoadDataFromFile("Tong.wt");
             test.PrintFeatureTable();
+            test.ConvertToShapeFileAndIndexFile();
             //test.ConvertToShapeFile();
             Console.ReadKey();
         }
