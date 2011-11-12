@@ -6,7 +6,7 @@ using System.Text;
 namespace MapArcGIS
 {
     public class WorkSpaceWL : WorkSpace
-    {
+    {   
         private struct LineData
         {
             public int lineSum;
