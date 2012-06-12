@@ -5,7 +5,7 @@ using System.Text;
 using System.IO;
 namespace MapArcGIS
 {
-    public class WorkSpaceWT: WorkSpace
+    public class WorkSpaceWT : WorkSpace
     {
         /// <summary>
         /// 文件长度是经过压缩的，是实际长度的二分之一
@@ -91,7 +91,7 @@ namespace MapArcGIS
         internal List<PointData> pointDatas;
 
         internal List<byte[]> pointFeatures;
-        
+
         public override void LoadData(WorkSpaceInfo wsi)
         {
             base.LoadData(wsi);
@@ -112,7 +112,7 @@ namespace MapArcGIS
 
                 id++;
                 long temp = workSpaceFile.Position;
- 
+
                 workSpaceFile.Seek(30, SeekOrigin.Current);
                 byte pointPype = br.ReadByte();
                 workSpaceFile.Seek(temp, SeekOrigin.Begin);
@@ -262,10 +262,10 @@ namespace MapArcGIS
                 workSpaceFile.Seek(dataHeads[2].dataOffset, SeekOrigin.Begin);
                 byte[] pointFeature = br.ReadBytes(dataHeads[2].size);
                 pointFeatures.Add(pointFeature);
-                workSpaceFile.Seek(dataHeads[2].dataOffset+0x0c, SeekOrigin.Begin);
+                workSpaceFile.Seek(dataHeads[2].dataOffset + 0x0c, SeekOrigin.Begin);
                 int tableItemOffset = br.ReadInt32();
-                
-                
+
+
                 //br.Close();
             }
             workSpaceFile.Seek(dataHeads[2].dataOffset + 0x142, SeekOrigin.Begin);//140是表头文件的开始偏移位置强两位是标示符
@@ -274,13 +274,16 @@ namespace MapArcGIS
             table.tableItemNumer = br.ReadInt32();
             table.tableItemLengthInBytes = br.ReadInt32();
             workSpaceFile.Seek(16, SeekOrigin.Current);
-            table.tableHead = new List<FeatureTableHead>();
+            table.tableHead = new List<FeatureTableHead>(); 
             for (int i = 0; i < table.tableHeadNumber; i++)
             {
                 long tmp = workSpaceFile.Position;
                 FeatureTableHead tableHead = new FeatureTableHead();
-                tableHead.headName = System.Text.Encoding.Default.GetString(br.ReadBytes(20)).Trim();//表单元名占20个字节
-                tableHead.itemType = br.ReadByte();
+                //tableHead.headName = System.Text.Encoding.Default.GetString(br.ReadBytes(20)).Trim();//表单元名占20个字节
+                tableHead.headNameBytes = br.ReadBytes(20);
+                tableHead.headName = System.Text.Encoding.Default.GetString(tableHead.headNameBytes).Trim();//表单元名占20个字节
+                //tableHead.headName = br.ReadBytes(20).Trim();//表单元名占20个字节
+                tableHead.itemType = (FeatureType)br.ReadByte();
                 tableHead.offset = br.ReadInt32();
                 tableHead.lengthInBytes = br.ReadInt16();
                 tableHead.tableItemCharLength = br.ReadInt16();
@@ -292,12 +295,37 @@ namespace MapArcGIS
             for (int i = 0; i < table.tableItemNumer; i++)
             {
                 br.ReadByte();
-                table.tableItem.Add(br.ReadBytes(table.tableItemLengthInBytes - 1));
+                table.tableItem.Add(br.ReadBytes(table.tableItemLengthInBytes)); // 
+            }
+            for (int i = 1; i < table.tableItemNumer; i++)
+            {
+                ProcessTableItem(table.tableItem[i], table.tableHead);
+
+            }
+        }
+
+        private void ProcessTableItem(byte[] featureData, List<FeatureTableHead> head)
+        {
+            //BinaryWriter bw = new BinaryWriter();
+            //foreach (var item in head)
+            //{
+            //    fs.
+            //}
+            using (FileStream fs = new FileStream(@"data/data.dat", FileMode.Append))
+            {
+                BinaryWriter ws = new BinaryWriter(fs);
+                foreach (var item in head)
+                {
+                    char[] temp = item.headName.ToCharArray();
+                    ws.Write(item.headName.Trim().ToCharArray());
+                    //ws.Seek(item.offset, SeekOrigin.Begin);
+                    ws.Write(featureData, item.offset, item.lengthInBytes);
+                }
             }
         }
         public void PrintFeatureTable()
         {
-            FileStream fs = new FileStream(workInfo.fileName + ".table", FileMode.OpenOrCreate);
+            FileStream fs = new FileStream(fileName + ".table", FileMode.OpenOrCreate);
             BinaryWriter ws = new BinaryWriter(fs);
 
             foreach (var item in pointFeatures)
@@ -323,10 +351,12 @@ namespace MapArcGIS
         }
         public void ConvertToShapeFileAndIndexFile()
         {
-            FileStream shapeFile = new FileStream(fileName+".shp",FileMode.OpenOrCreate);
+            FileStream shapeFile = new FileStream(fileName + ".shp", FileMode.OpenOrCreate);
             BinaryWriter shpWR = new BinaryWriter(shapeFile);
-            FileStream idxFile = new FileStream(fileName+".shx",FileMode.OpenOrCreate);
+            FileStream idxFile = new FileStream(fileName + ".shx", FileMode.OpenOrCreate);
             BinaryWriter idxWR = new BinaryWriter(idxFile);
+            FileStream dbfFile = new FileStream(fileName + ".dbf", FileMode.OpenOrCreate);
+            BinaryWriter dbfWR = new BinaryWriter(dbfFile);
             ////////////////////////////shp文件的头文件信息////////////////////////////////
             shpWR.Write(170328064);
             for (int i = 0; i < 6; i++)
@@ -371,9 +401,9 @@ namespace MapArcGIS
                 shpWR.Write(this.pointDatas[i - 1].positionY);
             }
             shapeFile.Seek(24, SeekOrigin.Begin);
-            shpWR.Write(ReverseArray(BitConverter.GetBytes((int)shapeFile.Length/2)));
+            shpWR.Write(ReverseArray(BitConverter.GetBytes((int)shapeFile.Length / 2)));
             idxFile.Seek(24, SeekOrigin.Begin);
-            idxWR.Write(ReverseArray(BitConverter.GetBytes((int)idxFile.Length/2)));
+            idxWR.Write(ReverseArray(BitConverter.GetBytes((int)idxFile.Length / 2)));
             shpWR.Close();
             shpWR.Dispose();
             shapeFile.Close();
@@ -382,9 +412,109 @@ namespace MapArcGIS
             idxWR.Dispose();
             idxFile.Close();
             idxFile.Dispose();
+            ////////////////////////dbf文件的属性信息//////////////////////////////////
+            dbfWR.Write((byte)0x03); //版本号
+            dbfWR.Write((byte)(DateTime.Today.Year % 2000)); //表示最近的更新日期，按照 YYMMDD 格式。
+            dbfWR.Write((byte)(DateTime.Today.Month));
+            dbfWR.Write((byte)(DateTime.Today.Day));
+            dbfWR.Write(table.tableItemNumer); //文件中的记录条数
+            dbfWR.Write((short)(table.tableHeadNumber*32 + 33));//头文件字节数
+            dbfWR.Write((short)table.tableItemLengthInBytes);//一条记录中的字节长度。
+            dbfWR.Write(0);
+            dbfWR.Write(0);
+            dbfWR.Write(0);
+            dbfWR.Write(0);
+            dbfWR.Write(0);//这儿要加东西
+            //UnicodeEncoding ae = new UnicodeEncoding();
+            foreach (var item in table.tableHead)
+            {
+                //Encoding.ASCII.
+
+                //dbfWR.Write(ae.GetBytes(item.headName), 0, 11);
+                //ae.GetString
+                //string s = ASCIIEncoding.GetEncoding("GB2312").GetString(Encoding.UTF8.GetBytes(item.headName));
+                //byte[] test = Encoding.Default.GetBytes(item.headName);
+                dbfWR.Write(Encoding.Default.GetBytes(item.headName), 0, 11);
+                
+                char type = ConvertType(item.itemType);
+                dbfWR.Write(type);
+
+                dbfWR.Write(0);//填充0
+                dbfWR.Write(GetItemTypeLength(type));//长度
+                dbfWR.Write(GetItemDemical(item.itemType));
+                dbfWR.Write(new byte[14]);
+            }
+            dbfWR.Close();
+            dbfWR.Dispose();
+        }
+
+        private byte GetItemDemical(FeatureType featureType)
+        {
+            if (featureType == FeatureType.Double)
+            {
+                return (byte)11;
+            }
+            else if (featureType == FeatureType.Float)
+            {
+                return (byte)6;
+            }
+            else
+            {
+                return (byte)0;
+            }
+        }
+
+        private byte GetItemTypeLength(char type)
+        {
+
+            if (type == 'N')
+            {
+                return (byte)16;
+            }
+            if (type == 'C' || type == 'B' || type == 'D')
+            {
+                return (byte)0;
+            }
+            if (type == 'L')
+            {
+                return (byte)1;
+            }
+            return (byte)0;
+        }
+
+        private char ConvertType(FeatureType featureType)
+        {
+
+            if (((long)featureType ^ ((1 << 1) + (1 << 2) + (1 << 3))) != 0)
+            {
+                return 'N';//都是数值
+            }
+            else if (((long)featureType ^ ((1 << 0) + (1 << 7) + (1 << 9))) != 0)
+            {
+                return 'C';
+            }
+            else if (((long)featureType ^ ((1 << 6))) != 0)
+            {
+                return 'C';
+            }
+            else if (((long)featureType ^ ((1 << 10) + (1 << 11) + (1 << 12) + (1 << 13) + (1 << 14) + (1 << 15))) != 0)
+            {
+                return 'B';//以前是G
+            }
+            else if (((long)featureType ^ ((1 << 4) + (1 << 5))) != 0)
+            {
+                return 'N';
+            }
+            else
+            {
+                return 'L';
+            }
+            
         }
         public void ConverToDataFIle()
         {
+            FileStream dbfFile = new FileStream(fileName + ".dbf", FileMode.OpenOrCreate);
+            BinaryWriter dbfWR = new BinaryWriter(dbfFile);
 
         }
         public byte[] ReverseArray(byte[] value)
@@ -394,7 +524,7 @@ namespace MapArcGIS
             result = new byte[value.Length];
             for (int i = 0; i < value.Length; i++)
             {
-                result[i] = value[value.Length - i-1];
+                result[i] = value[value.Length - i - 1];
             }
             return result;
         }

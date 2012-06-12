@@ -24,51 +24,51 @@
       </Struct>
     </NestedTypes>
     <TypeIdentifier>
-      <HashCode>AAAAEAAAAAAQAABAgAAQCAAAgAQAIAAQQAAAAAAAACA=</HashCode>
+      <HashCode>AAAAEAAAAAAQAABAgAAQCAAAgAQAIAAQQEAAAAAAACA=</HashCode>
       <FileName>WorkSpace.cs</FileName>
     </TypeIdentifier>
   </Class>
   <Class Name="MapArcGIS.WorkSpaceWT">
     <Position X="2.5" Y="1.75" Width="1.5" />
     <NestedTypes>
-      <Struct Name="MapArcGIS.WorkSpaceWT.PointData" Collapsed="true">
+      <Class Name="MapArcGIS.WorkSpaceWT.PointData" Collapsed="true">
         <TypeIdentifier>
           <NewMemberFileName>WorkSpaceWT.cs</NewMemberFileName>
         </TypeIdentifier>
-      </Struct>
-      <Struct Name="MapArcGIS.WorkSpaceWT.StringPointData" Collapsed="true">
+      </Class>
+      <Class Name="MapArcGIS.WorkSpaceWT.StringPointData" Collapsed="true">
         <TypeIdentifier>
           <NewMemberFileName>WorkSpaceWT.cs</NewMemberFileName>
         </TypeIdentifier>
-      </Struct>
-      <Struct Name="MapArcGIS.WorkSpaceWT.SubMapPointData" Collapsed="true">
+      </Class>
+      <Class Name="MapArcGIS.WorkSpaceWT.SubMapPointData" Collapsed="true">
         <TypeIdentifier>
           <NewMemberFileName>WorkSpaceWT.cs</NewMemberFileName>
         </TypeIdentifier>
-      </Struct>
-      <Struct Name="MapArcGIS.WorkSpaceWT.CriclePointData" Collapsed="true">
+      </Class>
+      <Class Name="MapArcGIS.WorkSpaceWT.CriclePointData" Collapsed="true">
         <TypeIdentifier>
           <NewMemberFileName>WorkSpaceWT.cs</NewMemberFileName>
         </TypeIdentifier>
-      </Struct>
-      <Struct Name="MapArcGIS.WorkSpaceWT.ArcPointData" Collapsed="true">
+      </Class>
+      <Class Name="MapArcGIS.WorkSpaceWT.ArcPointData" Collapsed="true">
         <TypeIdentifier>
           <NewMemberFileName>WorkSpaceWT.cs</NewMemberFileName>
         </TypeIdentifier>
-      </Struct>
-      <Struct Name="MapArcGIS.WorkSpaceWT.ImagePointData" Collapsed="true">
+      </Class>
+      <Class Name="MapArcGIS.WorkSpaceWT.ImagePointData" Collapsed="true">
         <TypeIdentifier>
           <NewMemberFileName>WorkSpaceWT.cs</NewMemberFileName>
         </TypeIdentifier>
-      </Struct>
-      <Struct Name="MapArcGIS.WorkSpaceWT.TextPointData" Collapsed="true">
+      </Class>
+      <Class Name="MapArcGIS.WorkSpaceWT.TextPointData" Collapsed="true">
         <TypeIdentifier>
           <NewMemberFileName>WorkSpaceWT.cs</NewMemberFileName>
         </TypeIdentifier>
-      </Struct>
+      </Class>
     </NestedTypes>
     <TypeIdentifier>
-      <HashCode>AAAAAJAkAAAQAAAAACAAAAQAoAAAAAAEAEAAAAAAAAA=</HashCode>
+      <HashCode>AgAAAJAAAQAQAgAIAAAAAAAAoAAAAAAAAAAAAAAAAAA=</HashCode>
       <FileName>WorkSpaceWT.cs</FileName>
     </TypeIdentifier>
   </Class>
@@ -154,14 +154,14 @@
     </TypeIdentifier>
   </Struct>
   <Struct Name="MapArcGIS.FeatureTableItem">
-    <Position X="0.75" Y="3.5" Width="1.5" />
+    <Position X="11.5" Y="2" Width="1.5" />
     <TypeIdentifier>
       <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
       <FileName>FeatureTableItem.cs</FileName>
     </TypeIdentifier>
   </Struct>
   <Struct Name="MapArcGIS.FeatureTableHead">
-    <Position X="0.75" Y="4" Width="1.5" />
+    <Position X="0.5" Y="3" Width="1.5" />
     <TypeIdentifier>
       <HashCode>AgCAAAAAAAgAAAAAAAAAAAAAAAAAAAAAAAACAAAgAAA=</HashCode>
       <FileName>FeatureTableHead.cs</FileName>
