@@ -11,7 +11,7 @@ namespace MapArcGIS
         {
             //MapGIS test = new MapGIS("250地质图.MPJ");
             WorkSpaceWT test = new WorkSpaceWT();
-            test.LoadDataFromFile("Tong.wt");
+            test.LoadDataFromFile("tong.wt");
             test.PrintFeatureTable();
             test.ConvertToShapeFileAndIndexFile();
             //test.ConvertToShapeFile();
