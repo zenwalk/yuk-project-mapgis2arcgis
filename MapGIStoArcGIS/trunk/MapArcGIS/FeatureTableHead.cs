@@ -16,21 +16,21 @@ namespace MapArcGIS
     }
     internal enum FeatureType
     {
-        String =    1 << 0,
-        Byte =      1 << 1,
-        Short =     1 << 2,
-        Int =       1 << 3,
-        Float =     1 << 4,
-        Double =    1 << 5,
-        Date =      1 << 6,
-        Time =      1 << 7,
-        Bool =      1 << 8,
-        Text =      1 << 9,
-        Image =     1 << 10,
-        Map =       1 << 11,
-        Aminate =   1 << 12,
-        PostCode =  1 << 13,
-        Binary =    1 << 14,
-        Table =     1 << 15
+        String,
+        Byte,
+        Short,
+        Int,
+        Float,
+        Double,
+        Date,
+        Time,
+        Bool,
+        Text,
+        Image,
+        Map,
+        Aminate,
+        PostCode,
+        Binary,
+        Table,
     }
 }

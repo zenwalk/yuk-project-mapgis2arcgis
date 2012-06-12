@@ -115,7 +115,7 @@ namespace MapArcGIS
 
                 workSpaceFile.Seek(30, SeekOrigin.Current);
                 byte pointPype = br.ReadByte();
-                workSpaceFile.Seek(temp, SeekOrigin.Begin);
+                workSpaceFile.Seek(temp + 1, SeekOrigin.Begin); //多个1
                 long current;
                 switch (pointPype)
                 {
@@ -126,6 +126,11 @@ namespace MapArcGIS
                         spd.stringOffset = br.ReadInt32();
                         spd.positionX = br.ReadDouble();
                         spd.positionY = br.ReadDouble();
+                        //byte[] pX = br.ReadBytes(8);
+                        //byte[] pY = br.ReadBytes(8); 
+
+                        //spd.positionX = BitConverter.ToDouble(pX,0);
+                        //spd.positionY = BitConverter.ToDouble(pY, 0);
                         current = workSpaceFile.Position;
                         workSpaceFile.Seek(dataHeads[1].dataOffset + spd.stringOffset, SeekOrigin.Begin);
                         spd.stringData = System.Text.Encoding.Default.GetString(br.ReadBytes(spd.stringSum));
@@ -274,7 +279,7 @@ namespace MapArcGIS
             table.tableItemNumer = br.ReadInt32();
             table.tableItemLengthInBytes = br.ReadInt32();
             workSpaceFile.Seek(16, SeekOrigin.Current);
-            table.tableHead = new List<FeatureTableHead>(); 
+            table.tableHead = new List<FeatureTableHead>();
             for (int i = 0; i < table.tableHeadNumber; i++)
             {
                 long tmp = workSpaceFile.Position;
@@ -296,22 +301,51 @@ namespace MapArcGIS
             for (int i = 0; i < table.tableItemNumer; i++)
             {
                 //br.ReadByte();
-                table.tableItem.Add(br.ReadBytes(table.tableItemLengthInBytes)); // 
+                byte[] data = br.ReadBytes(table.tableItemLengthInBytes);
+                //table.tableItem.Add(br.ReadBytes(table.tableItemLengthInBytes)); // 
+                int count = 0;
+                foreach (var item in table.tableHead)
+                {
+                    count += item.tableItemCharLength;
+                }
+                byte[] newData = new byte[count];
+                int flag = 0;
+                foreach (var item in table.tableHead)
+                {
+                    //table.tableItem.Add(SubArray(data,item.offset,item.tableItemCharLength));
+                    AddToArray(data,ref newData, item.offset, item.tableItemCharLength,ref flag);
+                }
+                table.tableItem.Add(newData);
             }
-            for (int i = 1; i < table.tableItemNumer; i++)
-            {
-                ProcessTableItem(table.tableItem[i], table.tableHead);
+            //for (int i = 1; i < table.tableItemNumer; i++)
+            //{
+            //    ProcessTableItem(table.tableItem[i], table.tableHead);
 
+            //}
+        }
+
+        private void AddToArray(byte[] data,ref byte[] newData, int offset, short length,ref int flag)
+        {
+            for (int i = 0; i < length; i++)
+            {
+                newData[flag + i] = data[offset + i];
             }
+            flag += length;
+        }
+
+        private byte[] SubArray(byte[] data, int offset, short length)
+        {
+            byte[] result = new byte[length];
+            for (int i = 0; i < length; i++)
+            {
+                result[i] = data[offset + i];
+            }
+            return result;
         }
 
         private void ProcessTableItem(byte[] featureData, List<FeatureTableHead> head)
         {
-            //BinaryWriter bw = new BinaryWriter();
-            //foreach (var item in head)
-            //{
-            //    fs.
-            //}
+
             using (FileStream fs = new FileStream(@"data/data.dat", FileMode.Append))
             {
                 BinaryWriter ws = new BinaryWriter(fs);
@@ -407,6 +441,7 @@ namespace MapArcGIS
             idxWR.Write(ReverseArray(BitConverter.GetBytes((int)idxFile.Length / 2)));
             shpWR.Close();
             shpWR.Dispose();
+
             shapeFile.Close();
             shapeFile.Dispose();
             idxWR.Close();
@@ -418,9 +453,14 @@ namespace MapArcGIS
             dbfWR.Write((byte)(DateTime.Today.Year % 2000)); //表示最近的更新日期，按照 YYMMDD 格式。
             dbfWR.Write((byte)(DateTime.Today.Month));
             dbfWR.Write((byte)(DateTime.Today.Day));
-            dbfWR.Write(table.tableItemNumer); //文件中的记录条数
-            dbfWR.Write((short)(table.tableHeadNumber*32 + 33));//头文件字节数
-            dbfWR.Write((short)(table.tableItemLengthInBytes - 1));//一条记录中的字节长度。去掉占位符
+            dbfWR.Write(table.tableItemNumer - 1); //文件中的记录条数
+            dbfWR.Write((short)(table.tableHeadNumber * 32 + 33));//头文件字节数
+            int count = 0;
+            foreach (var item in table.tableHead)
+            {
+                count += item.tableItemCharLength;
+            }
+            dbfWR.Write((short)(count+1));//一条记录中的字节长度。去掉占位符
             dbfWR.Write(0);
             dbfWR.Write(0);
             dbfWR.Write(0);
@@ -436,20 +476,22 @@ namespace MapArcGIS
                 //string s = ASCIIEncoding.GetEncoding("GB2312").GetString(Encoding.UTF8.GetBytes(item.headName));
                 //byte[] test = Encoding.Default.GetBytes(item.headName);
                 dbfWR.Write(Encoding.Default.GetBytes(item.headName), 0, 11);
-                
+
                 char type = ConvertType(item.itemType);
                 dbfWR.Write(type);
 
                 dbfWR.Write(0);//填充0
-                dbfWR.Write(GetItemTypeLength(type));//长度
+                dbfWR.Write((byte)item.tableItemCharLength);//长度
                 dbfWR.Write(GetItemDemical(item.itemType));
                 dbfWR.Write(new byte[14]);//补0
             }
             dbfWR.Write((byte)0x0d);
-            foreach (var item in table.tableItem)
+            for (int i = 1; i < table.tableItem.Count; i++)
             {
-                dbfFile.Write(item,1,table.tableItemLengthInBytes-1);
+                dbfWR.Write('0');
+                dbfFile.Write(table.tableItem[i], 0, table.tableItem[i].Length);
             }
+            dbfWR.Write((short)6688);
             dbfWR.Close();
             dbfWR.Dispose();
         }
@@ -479,7 +521,7 @@ namespace MapArcGIS
             }
             if (type == 'C' || type == 'B' || type == 'D')
             {
-                return (byte)0;
+                return (byte)8;
             }
             if (type == 'L')
             {
@@ -488,34 +530,28 @@ namespace MapArcGIS
             return (byte)0;
         }
 
-        private char ConvertType(FeatureType featureType)//不该这么写的...还能用就算了
+        private char ConvertType(FeatureType featureType)
         {
 
-            if (((long)featureType ^ ((1 << 1) + (1 << 2) + (1 << 3))) != 0)
-            {
-                return 'N';//都是数值
-            }
-            else if (((long)featureType ^ ((1 << 0) + (1 << 7) + (1 << 9))) != 0)
+            if (featureType == FeatureType.String || featureType == FeatureType.Text || featureType == FeatureType.Time || featureType == FeatureType.Date)
             {
                 return 'C';
             }
-            else if (((long)featureType ^ ((1 << 6))) != 0)
+            if (featureType == FeatureType.Image || featureType == FeatureType.Map || featureType == FeatureType.Aminate || featureType == FeatureType.PostCode || featureType == FeatureType.Table)
             {
-                return 'C';
+                return 'B';
             }
-            else if (((long)featureType ^ ((1 << 10) + (1 << 11) + (1 << 12) + (1 << 13) + (1 << 14) + (1 << 15))) != 0)
-            {
-                return 'B';//以前是G
-            }
-            else if (((long)featureType ^ ((1 << 4) + (1 << 5))) != 0)
+            if (featureType==FeatureType.Float || featureType==FeatureType.Double || featureType==FeatureType.Short || featureType==FeatureType.Int)
             {
                 return 'N';
+
             }
             else
             {
                 return 'L';
             }
-            
+
+
         }
         public void ConverToDataFIle()
         {
