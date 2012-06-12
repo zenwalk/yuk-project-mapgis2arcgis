@@ -290,11 +290,12 @@ namespace MapArcGIS
                 table.tableHead.Add(tableHead);
                 workSpaceFile.Seek(10, SeekOrigin.Current);
             }
-            workSpaceFile.Seek(table.tableItemLengthInBytes, SeekOrigin.Current);
+            //workSpaceFile.Seek(table.tableItemLengthInBytes, SeekOrigin.Current);
+            //workSpaceFile.Seek(-1, SeekOrigin.Current);
             table.tableItem = new List<byte[]>();
             for (int i = 0; i < table.tableItemNumer; i++)
             {
-                br.ReadByte();
+                //br.ReadByte();
                 table.tableItem.Add(br.ReadBytes(table.tableItemLengthInBytes)); // 
             }
             for (int i = 1; i < table.tableItemNumer; i++)
@@ -419,7 +420,7 @@ namespace MapArcGIS
             dbfWR.Write((byte)(DateTime.Today.Day));
             dbfWR.Write(table.tableItemNumer); //文件中的记录条数
             dbfWR.Write((short)(table.tableHeadNumber*32 + 33));//头文件字节数
-            dbfWR.Write((short)table.tableItemLengthInBytes);//一条记录中的字节长度。
+            dbfWR.Write((short)(table.tableItemLengthInBytes - 1));//一条记录中的字节长度。去掉占位符
             dbfWR.Write(0);
             dbfWR.Write(0);
             dbfWR.Write(0);
@@ -442,7 +443,12 @@ namespace MapArcGIS
                 dbfWR.Write(0);//填充0
                 dbfWR.Write(GetItemTypeLength(type));//长度
                 dbfWR.Write(GetItemDemical(item.itemType));
-                dbfWR.Write(new byte[14]);
+                dbfWR.Write(new byte[14]);//补0
+            }
+            dbfWR.Write((byte)0x0d);
+            foreach (var item in table.tableItem)
+            {
+                dbfFile.Write(item,1,table.tableItemLengthInBytes-1);
             }
             dbfWR.Close();
             dbfWR.Dispose();
@@ -482,7 +488,7 @@ namespace MapArcGIS
             return (byte)0;
         }
 
-        private char ConvertType(FeatureType featureType)
+        private char ConvertType(FeatureType featureType)//不该这么写的...还能用就算了
         {
 
             if (((long)featureType ^ ((1 << 1) + (1 << 2) + (1 << 3))) != 0)
